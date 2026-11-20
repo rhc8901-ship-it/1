@@ -41,8 +41,10 @@ jobs:
       - name: Prepare web assets and bundle native voice bridge
         run: |
           mkdir -p www
-          cp index.html manifest.json sw.js icon-192.png icon-512.png va-*.js www/
-          if [ -f icon-maskable-512.png ]; then cp icon-maskable-512.png www/; fi
+          cp index.html va-*.js www/
+          for f in manifest.json sw.js icon-192.png icon-512.png icon-maskable-512.png; do
+            if [ -f "$f" ]; then cp "$f" www/; else echo "optional file missing, skipped: $f"; fi
+          done
           npm run build:voice
 
       - name: Add Android platform
@@ -52,7 +54,12 @@ jobs:
         run: node scripts/patch-android-manifest.js
 
       - name: Generate Android launcher icons
-        run: npx @capacitor/assets generate --android --iconBackgroundColor '#06080e' --iconBackgroundColorDark '#06080e' --splashBackgroundColor '#06080e' --splashBackgroundColorDark '#06080e'
+        run: |
+          if [ -f assets/icon.png ]; then
+            npx @capacitor/assets generate --android --iconBackgroundColor '#06080e' --iconBackgroundColorDark '#06080e' --splashBackgroundColor '#06080e' --splashBackgroundColorDark '#06080e'
+          else
+            echo "assets/icon.png not found - default launcher icon will be used"
+          fi
 
       - name: Sync Capacitor plugins and web assets
         run: npx cap sync android
